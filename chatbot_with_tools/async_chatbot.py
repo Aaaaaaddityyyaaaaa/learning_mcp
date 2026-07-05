@@ -6,8 +6,9 @@ import os
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import operator
 from typing import List ,Annotated ,TypedDict
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage , HumanMessage
 from langgraph.prebuilt.tool_node import ToolNode , tools_condition
+import re
 
 load_dotenv()
 API_GROQ = os.getenv("GROQ_API_KEY")
@@ -28,7 +29,16 @@ client = MultiServerMCPClient(
 
 async def build_graph() : 
   tools = await client.get_tools()
+  resources = await client.get_resources()
+
+  resource_map  = {}
+  for r in resources:
+        uri_str = str(r.metadata.get("uri", ""))
+        name = uri_str.split("/")[-1]
+        resource_map[name] = r.data if isinstance(r.data, str) else r.data.decode()
+
   llm_with_tools = llm.bind_tools(tools)
+
 
   async def chat_node(state:ChatState) :
     messages = state["messages"]
@@ -46,11 +56,33 @@ async def build_graph() :
   graph.add_edge("tools","chat_node")
 
   Chat_Bot = graph.compile()
-  return Chat_Bot
+  return Chat_Bot , resource_map
 
      
+
+async def main() :
+  chatbot ,resource_map = await build_graph()
+  
+  while(True) :
+
+    message = input("Chat : ")
+    mentions = check_at(message)
+    for r in resource_map :
+      if(r in mentions) :
+        message = message.replace(f"@{r}",resource_map[r])
+        
+
+    result = await chatbot.ainvoke({"messages":[HumanMessage(content=message)]})
+    print(result["messages"][-1].content)
+
+def check_at(text) :
+  pattern= r"@(\w+)"
+  mentions = re.findall(pattern, text)
+  return mentions
 
 
 
 if __name__ == "__main__" :
-  asyncio.run(build_graph())
+  result = asyncio.run(main())
+  print(result)
+  

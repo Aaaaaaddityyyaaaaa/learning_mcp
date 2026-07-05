@@ -41,7 +41,19 @@ async def weather_tool(input_city:str=Field(description="This is the name of the
   else:
     return "City not found or invalid API key."
   
+@server.resource(uri="resource://Info_Aditya",
+                 name="Info_Aditya",
+                 description="This resource is used only when we need certain information about aditya"
+                 )
+def Facts_About_Aditya() :
+   data = json.dumps({"full name":"Aditya Pandey" , 
+           "height" : "5feet 6in" , 
+           "weight"  : "180 kg",  
+           "schooling":"MDS",
+           "adress":"Dehradun" , 
+           "University":"DoonUniversity"} )
+   return data
+   
 
 if __name__ == "__main__":
     server.run()
-    
