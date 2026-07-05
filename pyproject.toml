@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "app"
 version = "0.1.0"
@@ -10,3 +14,7 @@ dependencies = [
     "prompt-toolkit>=3.0.51",
     "python-dotenv>=1.1.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "chatbot_with_tools*"]
